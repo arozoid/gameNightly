@@ -3,10 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌱🤖 Cropbots</title>
+    <title>Cropbots</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/favicon.png"/>
 </head>
 <body>
+    <div id="otp-modal" style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        font-family: system-ui, sans-serif;
+    ">
+        <div style="
+            background: #fff;
+            width: 300px;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        ">
+            <h2 style="margin:0;font-size:18px">Log into 🌱🤖 Cropbots</h2>
+
+            <input id="otp-email" type="email" placeholder="email"
+                style="padding:10px;border:1px solid #ccc;border-radius:6px;" />
+
+            <button id="otp-send"
+                style="padding:10px;border:none;background:#4a7fff;color:white;border-radius:6px;cursor:pointer;">
+                Send code
+            </button>
+
+            <div id="otp-code-box" style="display:none; flex-direction: column; gap: 10px;">
+                <input id="otp-code" placeholder="6-digit code" maxlength="6"
+                    style="padding:10px;border:1px solid #ccc;border-radius:6px;font-size:16px;text-align:center;" />
+
+                <button id="otp-verify"
+                    style="padding:10px;border:none;background:#4a7fff;color:white;border-radius:6px;cursor:pointer;">
+                    Verify
+                </button>
+            </div>
+
+            <div id="otp-status" style="color:#444; font-size:14px; min-height:20px;"></div>
+        </div>
+    </div>
+
     <script type="module" src="./main.js"></script>
 </body>
 </html>

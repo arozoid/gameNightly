@@ -1,6 +1,16 @@
 //-------------
 // Input & updates
 //-------------
+let camMove = vec2(0, 0);
+
+let mouseDown = false;
+onMousePress(() => {
+  mouseDown = true;
+})
+
+onMouseRelease(() => {
+  mouseDown = false;
+})
 
 player.onUpdate(() => {
     const xKeyInputs = 
@@ -36,6 +46,8 @@ player.onUpdate(() => {
         // zero out normal vel to avoid conflict
         player.vel = vec2(0,0);
     }
+    // camera movement amount
+    camMove = getCamPos().lerp(player.pos.sub(player.width / 2, player.height / 2), 0.12).sub(getCamPos());
 
     setCamPos(getCamPos().lerp(player.pos.sub(player.width / 2, player.height / 2), 0.12));
 
@@ -51,7 +63,7 @@ player.onCollide("enemyBullet", () => {
 })
 
 player.on("hurt", (num) => {
-  if (gameShake) shake(3);
+  if (settings.gameShake) shake(3);
   player.setHP(player.hp() + num * (1 - difficulty));
   play("hurt", { volume: 1.5 });
 })
@@ -107,19 +119,33 @@ menu.onUpdate(() => {
   menu.scale = menuScale ? vec2(1.1, 1.1) : vec2(1, 1);
 })
 
+// Currency updates
+cur.onUpdate(() => { 
+  cur.pos = toolbox.pos.add(vec2(2.5, toolbox.height + 20));
+});
+
+curText.onUpdate(() => {
+  curText.pos = cur.pos.add(vec2(35, cur.width / -6));
+  // set the text to the current currency amount
+  curText.text = gears;
+});
+
 // Bars (item cooldown, dash, etc.)
 bars.onUpdate(() => { bars.pos = getCamPos().sub(center()); });
 
 // Global updates
-onUpdate(() => { frameCounter++ })
+onUpdate(() => { 
+  frameCounter++ 
 
-let mouseDown = false;
-onMousePress(() => {
-  mouseDown = true;
-})
-
-onMouseRelease(() => {
-  mouseDown = false;
+  // gear effect update
+  gearEffect.forEach((eff, i) => {
+    eff[0] = eff[0].add(camMove.scale(1));
+    eff[0] = eff[0].lerp(cur.pos, 0.3);
+    if (eff[0].dist(cur.pos.x, cur.pos.y) < 10) {
+      gears += eff[1];
+      gearEffect.splice(i, 1);
+    }
+  });
 })
 
 // don't ask
@@ -133,8 +159,4 @@ sixSeven.onUpdate(() => {
     summon(() => e.gigagantrum(), vec2(1000, 0));
     destroy(sixSeven);
   }
-})
-
-scene("expedition", () => {
-
 })

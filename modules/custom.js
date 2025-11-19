@@ -354,7 +354,7 @@ let p = {
 
 // entities
 let e = {
-    enemy(col = [], tag = true) {
+    enemy(col = [], worth = 1, tag = true) {
         return [
             (tag) ? "enemy" : "",
             pos(),
@@ -362,7 +362,7 @@ let e = {
             rotate(),
             body({ drag: 0.5, maxSpeed: 200 }),
             anchor('center'),
-            enemy(),
+            enemy(worth),
             lifespan(-1, true),
             {
                 add() {
@@ -385,7 +385,7 @@ let e = {
             sprite("skuller"),
             scale(),
             health(5, 5),
-            ...e.enemy(["mapCol"]),
+            ...e.enemy(["mapCol"], 1),
             item(Math.random() * 2),
             {
                 update() {
@@ -401,7 +401,7 @@ let e = {
             sprite("gigagantrum"),
             scale(3),
             health(50, 50),
-            ...e.enemy(["mapCol","enemy"], false),
+            ...e.enemy(["mapCol","enemy"], 25, false),
             item([3, 2, 5]),
             {
                 update() {
@@ -421,7 +421,7 @@ let e = {
             "viratEnemy",
             sprite("virat"),
             health(5, 5),
-            ...e.enemy(["mapCol"]),
+            ...e.enemy(["mapCol"], 2),
             item(Math.random() * 2),
             dash(["mapCol"], 1800, Math.random() * 5, 2, 0.2, ["mapCol", "enemy", "player"]),
             scale(1.5),
@@ -443,7 +443,7 @@ let e = {
             "virabirdEnemy",
             sprite("virabird"),
             health(2, 2),
-            ...e.enemy(["mapCol","enemy","player"]),
+            ...e.enemy(["mapCol","enemy","player"], 2),
             item(Math.random() * 2),
             dash(["mapCol","enemy","player"], 750, 0, 1, 0.9, ["mapCol", "enemy", "player"]),
             scale(1),
@@ -459,6 +459,29 @@ let e = {
                     */
 
                     virabirdAi(this, player, 1, "virabirdBullet");
+                }
+            }
+        ]
+    },
+    viratBoss() {
+        return [
+            "viratBossEnemy",
+            sprite("virat"),
+            health(50, 50),
+            ...e.enemy(["mapCol","enemy","player"], 2),
+            item(Math.random() * 2),
+            dash(["mapCol","enemy","player"], 750, 0, 1, 0.9, ["mapCol", "enemy", "player"]),
+            scale(5),
+            {
+                add() {
+
+                },
+                update() {
+                    collideOnceWith(this, "player", (p) => {
+                        if (!p.isDashing) p.hurt(1);
+                    })
+
+                    viratAi(this, player, null, null);
                 }
             }
         ]
@@ -541,7 +564,7 @@ function projectile(speed, lSpan, direction, col = false, sc = true) {
     }
 }
 
-function enemy() {
+function enemy(worth = 1) {
     return {
         id: "enemy",
         require: [ "health", "lifespan", "scale" ],
@@ -555,7 +578,8 @@ function enemy() {
           });
           this.on("death", () => {
               this.lifespan = 0.1;
-              if (gameShake) shake(3);
+              if (settings.gameShake) shake(3);
+              gearEffect.push([this.pos, worth ?? 1]);
           })
         },
         update() {

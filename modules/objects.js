@@ -4,6 +4,7 @@
 // the chosen bean. (alan becker reference??)
 let pHp = 30;
 let difficulty = 1;
+let gears = 0;
 
 const player = add([
   "player",
@@ -27,9 +28,9 @@ setCamPos(player.pos);
 
 // those one guys (thatoneguy AND battle cats reference??)
 
-summon(() => e.virat(), player.pos, 2);
+summon(() => e.virat(), player.pos, 1);
 
-summon(() => e.virabird(), player.pos, 1);
+summon(() => e.virabird(), player.pos, 0);
 
 /*for (let i = 0; i < 2; i++) {
   add([
@@ -127,6 +128,31 @@ const bars = add([
   scale(1),
   pos(getCamPos().sub(center())),
 ])
+
+// currency icon (gear)
+const cur = add([
+  sprite("gear-o"),
+  pos(getCamPos().sub(center()).add(vec2(50, toolbox.height + 100))),
+  layer("ui"),
+  scale(0.7),
+  area(),
+  anchor("center"),
+])
+
+const curText = add([
+  pos(cur.pos.add(vec2(5, 5))),
+  text("0", { 
+    size: 30,
+    width: 500,
+    font: "happy-o",
+  }),
+  color(),
+  layer("ui"),
+  scale(1),
+])
+
+// gear effect
+const gearEffect = [];
 
 // don't ask
 const sixSeven = add([

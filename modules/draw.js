@@ -130,4 +130,12 @@ playerHealth.onDraw(() => {
 
 onDraw(() => {
     updateTrails();
+    gearEffect.forEach((eff) => {
+      drawSprite({
+        sprite: "gear",
+        pos: eff[0],
+        scale: vec2(0.5, 0.5),
+        anchor: "center",
+      });
+    });
 });

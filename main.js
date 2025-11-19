@@ -1,26 +1,5 @@
 // main.js
-// Main javascript workflow for Cropbots (optimized tiling & draw)
-
-function loadScripts(scripts, callback) {
-    let i = 0;
-    function next() {
-        if (i >= scripts.length) return callback && callback();
-        const s = document.createElement("script");
-
-        s.src = scripts[i] + '?v=' + Date.now();
-
-        s.onload = () => {
-            console.log("Loaded:", scripts[i]);
-            i++;
-            next();
-        }
-        s.onerror = (e) => console.error("Failed:", scripts[i], e);
-        document.head.appendChild(s);
-    }
-    next();
-}
-
-
+// Main javascript workflow for Cropbots
 //-------------
 // Imports
 //-------------
@@ -28,29 +7,112 @@ import { kaplay } from "./modules/imports/kaplay.js";
 import { crew } from "./modules/imports/crew.js";
 import { createClient } from "./modules/imports/supabase.js";
 
+// script loader
+function loadScripts(scripts, callback, vars = {}) {
+    // attach vars to window
+    for (let k in vars) window[k] = vars[k];
+
+    let i = 0;
+    function next() {
+        if (i >= scripts.length) return callback && callback();
+        const s = document.createElement("script");
+        s.src = scripts[i] + '?v=' + Date.now();
+        s.onload = () => { console.log("Loaded:", scripts[i]); i++; next(); };
+        s.onerror = e => console.error("Failed:", scripts[i], e);
+        document.head.appendChild(s);
+    }
+    next();
+}
+
 //-------------
 // Constants
 //-------------
+// supabase
+const supabase = createClient(
+    "https://gofwuyczxgsuflflpjry.supabase.co/", 
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZnd1eWN6eGdzdWZsZmxwanJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4NzAwNjcsImV4cCI6MjA3ODQ0NjA2N30.Fzl9CG9X1spWNLeoLM3BAJNK23g71d93b-TjfT2-kr4", 
+{
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
 
 // cropbot version
 const VERSION = "nightly20251113";
 console.log("Cropbots version:", VERSION);
 
+async function loadjs() {
 //-------------
-// VM Worker
+// Loading & Saving (supabase & local storage)
 //-------------
-const worker = new Worker("workers/vm-worker.js");
 
-worker.onmessage = (e) => {
-  const { type, data } = e.data;
-  if (type === "log") console.log("Worker log:", ...data);
-  else if (type === "result") console.log("Worker result:", data);
-  else if (type === "error") console.error("Worker error:", data);
-};
+// local storage key
+const LS_KEY = "cropbots_user_data";
 
-function vm_run(code) {
-  worker.postMessage({ code });
+// get current user
+async function getCurrentUser() {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.user ?? null;
 }
+
+// load user data
+async function loadUserData() {
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .select("settings, game_data")
+            .eq("id", user.id)
+            .single();
+
+        if (error) throw error;
+
+        // save backup to localStorage
+        localStorage.setItem(LS_KEY, JSON.stringify(data));
+
+        return data;
+    } catch (err) {
+        console.warn("Supabase fetch failed, falling back to localStorage:", err);
+        // fallback to localStorage
+        const backup = localStorage.getItem(LS_KEY);
+        if (backup) return JSON.parse(backup);
+        return null;
+    }
+}
+
+// save user data
+async function saveUserData(settings, game_data) {
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    // always save to localStorage
+    const payload = { settings, game_data };
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+
+    // try saving online
+    try {
+        const { data, error } = await supabase
+            .from("users")
+            .update({ settings, game_data })
+            .eq("id", user.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.warn("Supabase save failed, localStorage updated:", err);
+        return payload; // still return the local backup
+    }
+}
+
+//-------------
+// Settings
+//-------------
+const userData = await loadUserData();   
+
+const { settings, game_data } = userData;
+console.log("loaded user data:", game_data, settings);
 
 //-------------
 // Kaplay init
@@ -109,6 +171,9 @@ loadSprite("virabird", "assets/objects/virabird.png");
 
 loadSprite("virabirdBullet", "assets/projectiles/virabirdBullet.png");
 
+loadSprite("gear", "assets/items/gear.png")
+loadSprite("gear-o", "assets/items/gear-o.png")
+
 loadSpriteAtlas("assets/tileset.png", "assets/tileset.json");
 loadSprite("chunk-24", "assets/chunk-24.png");
 loadSprite("loading", "assets/loading.png")
@@ -123,9 +188,8 @@ loadSound("pickup", "assets/sounds/coinpickup.wav");
 loadSound("select", "assets/sounds/select.wav");
 
 //-------------
-// Load all modules
+// Loading Screen
 //-------------
-// loading screen :>
 var loadingRect = add([
     pos(0,0),
     rect(width() * 3, height() * 3),
@@ -180,8 +244,6 @@ onLoading((pct) => {
 console.log("loading..")
 
 loadScripts([
-    // Settings initialization
-    "modules/load.js",
     // Custom Components & Plugins
     "modules/custom.js",
     // AI + Pathfinding (tile-based)
@@ -204,4 +266,99 @@ loadScripts([
         destroy(loadingRect);
         console.log("i cast fireball! extremely effective. loading screen destroyed")
     }, 100)
+}, { settings, game_data });
+}
+
+// -------------
+// OTP Login
+// -------------
+const modal = document.querySelector("#otp-modal");
+const emailInput = document.querySelector("#otp-email");
+const sendBtn = document.querySelector("#otp-send");
+const codeBox = document.querySelector("#otp-code-box");
+const codeInput = document.querySelector("#otp-code");
+const verifyBtn = document.querySelector("#otp-verify");
+const statusLine = document.querySelector("#otp-status");
+
+// try to auto-login
+supabase.auth.getSession().then(({ data }) => {
+    if (data.session) loadjs();
+    else modal.style.display = "flex";
 });
+
+// send otp
+sendBtn.onclick = async () => {
+    const email = emailInput.value.trim();
+    if (!email) return;
+
+    statusLine.textContent = "Sending...";
+    const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+            emailRedirectTo: null,       // disables magic link
+            shouldCreateUser: true,
+            channel: "email",            // IMPORTANT
+        }
+    });
+
+    if (error) {
+        statusLine.textContent = error.message;
+    } else {
+        statusLine.textContent = "Code sent!";
+        codeBox.style.display = "flex";
+        codeInput.focus();
+    }
+};
+
+// verify otp
+verifyBtn.onclick = async () => {
+    const email = emailInput.value.trim();
+    const code = codeInput.value.trim();
+
+    statusLine.textContent = "Verifying...";
+
+    const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email",
+    });
+
+    if (error) {
+        statusLine.textContent = error.message;
+    } else {
+        statusLine.textContent = "Logged in!";
+        modal.style.display = "none";
+
+        // optional — load user row (your table)
+        const { data: profile } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", data.user.id)
+            .single();
+
+        console.log("profile:", profile);
+
+        loadjs();
+    }
+};
+
+//-------------
+// VM Worker
+//-------------
+const worker = new Worker("workers/vm-worker.js");
+
+worker.onmessage = (e) => {
+  const { type, data } = e.data;
+  if (type === "log") console.log("Worker log:", ...data);
+  else if (type === "result") console.log("Worker result:", data);
+  else if (type === "error") console.error("Worker error:", data);
+};
+
+function vm_run(code) {
+  worker.postMessage({ code });
+}
+
+// save data before unload!
+window.onbeforeunload = function(){
+   saveUserData(window.settings, window.game_data);
+}

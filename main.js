@@ -279,6 +279,7 @@ const codeBox = document.querySelector("#otp-code-box");
 const codeInput = document.querySelector("#otp-code");
 const verifyBtn = document.querySelector("#otp-verify");
 const statusLine = document.querySelector("#otp-status");
+const emailBox = document.querySelector("#otp-email-box");
 
 // try to auto-login
 supabase.auth.getSession().then(({ data }) => {
@@ -305,6 +306,7 @@ sendBtn.onclick = async () => {
         statusLine.textContent = error.message;
     } else {
         statusLine.textContent = "Code sent!";
+        emailBox.style.display = "none";
         codeBox.style.display = "flex";
         codeInput.focus();
     }

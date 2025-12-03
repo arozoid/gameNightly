@@ -33,6 +33,12 @@ player.onUpdate(() => {
         player.dash(inputDir.x, inputDir.y);
     }
 
+    // force player back into bounds
+    if (player.pos.x < 0) player.pos.x = 0;
+    if (player.pos.y < 0) player.pos.y = 0;
+    if (player.pos.x > mapPixelWidth) player.pos.x = mapPixelWidth;
+    if (player.pos.y > mapPixelHeight) player.pos.y = mapPixelHeight;
+
     // only apply normal input velocity if NOT dashing
     if (!player.isDashing) {
         xVel += inputDir.x * player_speed;
@@ -147,6 +153,25 @@ onUpdate(() => {
     }
   });
 })
+
+// expedition time
+expedition.onUpdate(() => {
+  expedition.pos = getCamPos().sub(center()).add(vec2((width() / 2) - expedition.width / 2, 25));
+  expedition.expTime -= dt();
+
+  const minutes = Math.floor(expedition.expTime / 60);
+  const seconds = Math.floor(expedition.expTime % 60);
+
+  expedition.text = 
+    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+    (seconds < 10 ? "0" + seconds : seconds);
+
+  if (expedition.expTime <= 0) {
+    // end expedition
+    expedition.expTime = 0;
+    // todo: expedition end logic
+  }
+});
 
 // don't ask
 sixSeven.onUpdate(() => {

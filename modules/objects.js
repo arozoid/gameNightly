@@ -154,6 +154,22 @@ const curText = add([
 // gear effect
 const gearEffect = [];
 
+// expedition time
+const expedition = add([
+  pos(width() / 2, 24),
+  text("10:00", {
+    size: 24,
+    width: 120,
+    font: "happy-o",
+  }),
+  color(),
+  layer("ui"),
+  scale(1),
+  {
+    expTime: 600,
+  }
+]);
+
 // don't ask
 const sixSeven = add([
   {

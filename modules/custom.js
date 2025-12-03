@@ -363,7 +363,7 @@ let e = {
             body({ drag: 0.5, maxSpeed: 200 }),
             anchor('center'),
             enemy(worth),
-            lifespan(-1, true),
+            lifespan(-1, true, (_) => { gearEffect.push([_.pos, worth ?? 1]) }),
             {
                 add() {
                     this.on("hurt", () => {
@@ -511,7 +511,7 @@ function item(cd, mCd = []) {
     };
 }
 
-function lifespan(lSpan, s = false) {
+function lifespan(lSpan, s = false, dFunc = () => {}) {
     return {
         id: "lifespan",
         require: [],
@@ -526,7 +526,10 @@ function lifespan(lSpan, s = false) {
 
             this.lifespan -= dt();
 
-            if (this.lifespan <= 0) destroy(this);
+            if (this.lifespan <= 0) {
+                dFunc(this);
+                destroy(this);
+            }
 
             if (this.lifespan <= 0.1 && s === true) {
                 this.opacity = this.lifespan * 10;
@@ -564,7 +567,7 @@ function projectile(speed, lSpan, direction, col = false, sc = true) {
     }
 }
 
-function enemy(worth = 1) {
+function enemy() {
     return {
         id: "enemy",
         require: [ "health", "lifespan", "scale" ],
@@ -579,7 +582,6 @@ function enemy(worth = 1) {
           this.on("death", () => {
               this.lifespan = 0.1;
               if (settings.gameShake) shake(3);
-              gearEffect.push([this.pos, worth ?? 1]);
           })
         },
         update() {

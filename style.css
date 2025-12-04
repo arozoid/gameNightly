@@ -2,7 +2,14 @@ body {
   height: 100vh;
   width: 100vw;
   background-color: rgb(22, 22, 22);
+  /* scrollbar, please perish */
+  overflow: hidden;
 }
+
+/* this damned scrollbar won't quit it */
+html { scrollbar-width: none; } /* firefox */
+html::-webkit-scrollbar { display: none; } /* chrome */
+body { -ms-overflow-style: none; } /* ie and edge */
 
 * {
   box-sizing: border-box;

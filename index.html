@@ -42,16 +42,36 @@
             <div id="otp-code-box" style="display:none; flex-direction: column; gap: 10px;">
                 <input id="otp-code" placeholder="6-digit code" maxlength="6"
                     style="padding:10px;border:1px solid #ccc;border-radius:6px;font-size:16px;text-align:center;" />
-
                 <button id="otp-verify"
                     style="padding:10px;border:none;background:#4a7fff;color:white;border-radius:6px;cursor:pointer;">
                     Verify
+                </button>
                 </button>
             </div>
 
             <div id="otp-status" style="color:#444; font-size:14px; min-height:20px;"></div>
         </div>
     </div>
+    
+<div id="inventory-modal" class="inventory-modal">
+    <div class="inventory-container">
+        <h2 class="inventory-title">🌱 Cropbots Inventory</h2>
+
+        <div id="inventory-grid" class="inventory-grid">
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <div class="inv-slot">Empty</div>
+            <!-- add more slots as needed -->
+        </div>
+
+        <div id="inventory-status" class="inventory-status"></div>
+    </div>
+</div>
 
     <script type="module" src="./main.js"></script>
 </body>

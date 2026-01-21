@@ -84,6 +84,74 @@ const playerHealth = add([
   layer("ui"),
 ])
 
+// the inventory!!!
+class Inventory {
+    constructor() {
+        this.items = [];
+    }
+
+    addItem(item, amount = 1) {
+        if (item.stackable) {
+            const existing = this.items.find(i => i.id === item.id);
+            if (existing) {
+                existing.add(amount);
+            } else {
+                this.items.push(new Item({ ...item, quantity: amount }));
+            }
+        } else {
+            for (let i = 0; i < amount; i++) {
+                this.items.push(new Item({ ...item }));
+            }
+        }
+    }
+
+    removeItem(itemId, amount = 1) {
+        const index = this.items.findIndex(i => i.id === itemId);
+        if (index === -1) return false;
+
+        const item = this.items[index];
+        const shouldDelete = item.remove(amount);
+        if (shouldDelete) this.items.splice(index, 1);
+        return true;
+    }
+
+    getItemsByType(type) {
+        return this.items.filter(i => i.type === type);
+    }
+}
+
+class Item {
+    constructor({ id, name, type, icon, stackable = false, quantity = 1, stats = {}, description = "" }) {
+        this.id = id;
+        this.name = name;
+        this.type = type;           // "weapon", "material", "misc"
+        this.icon = icon;           // KAPLAY CREW icon path
+        this.stackable = stackable;
+        this.quantity = quantity;
+        this.stats = stats;
+        this.description = description;
+    }
+
+    // add quantity (for stackable items)
+    add(amount = 1) {
+        if (this.stackable) this.quantity += amount;
+    }
+
+    // remove quantity, return true if item should be deleted
+    remove(amount = 1) {
+        if (this.stackable) {
+            this.quantity -= amount;
+            return this.quantity <= 0;
+        } else {
+            return true; // non-stackable should be deleted when removed
+        }
+    }
+}
+
+let inventory = new Inventory();
+
+
+
 // toolbox icon
 const toolbox = add([
   sprite("toolbox-o"),
